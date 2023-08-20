@@ -10,14 +10,14 @@ docker-compose up
 
 ## DAGS
 
-### extract-highway-geometries
+### process-highway-geometries
 
-This dag is responsible for downloading highway geometries and saving them to disk
+This dag is responsible for downloading highway geometries, saving them to disk in a database ready format, and loading them into the database.
 
-### extract-city-points
+### process-city-points
 
-This dag is responsible for extracting the point geometries of cities and saving them to disk
+This dag is responsible for downloading the point geometries of cities, saving them to disk, and uploading them to the database
 
-### extract-gob
+### process-gob
 
-This dag is responsible for extracting data from [GOB](https://www.gob.mx/sesnsp/acciones-y-programas/incidencia-delictiva-del-fuero-comun-nueva-metodologia)
+This dag is responsible for extracting data from [GOB](https://www.gob.mx/sesnsp/acciones-y-programas/incidencia-delictiva-del-fuero-comun-nueva-metodologia), saving it to disk, and then uploading to the database
