@@ -6,6 +6,7 @@ from airflow.decorators import dag, task
 from airflow.sensors.filesystem import FileSensor
 
 
+
 @dag(
     dag_id="process-roadways-dag",
     start_date=datetime.datetime(2023, 8, 20),
@@ -88,18 +89,25 @@ def process_roadways_dag():
         '''
         db_session.run(load_intersection_relation_query)
 
-    with neo4j.GraphDatabase.driver("bolt://localhost:7687", auth=('neo4j', '12345678')) as driver:
+    with neo4j.GraphDatabase.driver("bolt://localhost:7687", auth=('neo4j', 'neo4j222')) as driver:
         with driver.session(database="neo4j") as session:
             try:
                 download_map_data()
-                download_exists = FileSensor(
-                    task_id='wait_for_network_files',
+                node_file_exists = FileSensor(
+                    task_id='wait_for_node_file',
                     filepath='/opt/airflow/data/mexico_nodes.csv',
                     mode='poke',
                     timeout=60 * 60 * 5,  # Timeout after 5 hours
                     poke_interval=60,  # Check for the data every minute
                 )
-                download_exists >> create_indicies(session) >> load_intersections(
+                relations_file_exists = FileSensor(
+                    task_id='wait_for_network_files',
+                    filepath='/opt/airflow/data/mexico_relations.csv',
+                    mode='poke',
+                    timeout=60 * 60 * 5,  # Timeout after 5 hours
+                    poke_interval=60,  # Check for the data every minute
+                )
+                [relations_file_exists, node_file_exists] >> create_indicies(session) >> load_intersections(
                     session) >> load_intersection_relations(session)
             finally:
                 session.close()
