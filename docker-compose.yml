@@ -50,8 +50,8 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.7.0}
-  # build: .
+  #image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.7.0}
+  build: .
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -77,13 +77,17 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/data/:/opt/airflow/data
   user: "${AIRFLOW_UID:-50000}:0"
+
+
   depends_on:
     &airflow-common-depends-on
     redis:
       condition: service_healthy
     postgres:
       condition: service_healthy
+
 
 services:
   postgres:
@@ -100,6 +104,8 @@ services:
       retries: 5
       start_period: 5s
     restart: always
+    networks:
+      - mexico_net
 
   redis:
     image: redis:latest
@@ -112,6 +118,8 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    networks:
+      - mexico_net
 
   airflow-webserver:
     <<: *airflow-common
@@ -129,6 +137,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - mexico_net
 
   airflow-scheduler:
     <<: *airflow-common
@@ -144,6 +154,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - mexico_net
 
   airflow-worker:
     <<: *airflow-common
@@ -167,6 +179,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - mexico_net
 
   airflow-triggerer:
     <<: *airflow-common
@@ -182,6 +196,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - mexico_net
 
   airflow-init:
     <<: *airflow-common
@@ -260,6 +276,8 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
+    networks:
+      - mexico_net
 
   airflow-cli:
     <<: *airflow-common
@@ -273,6 +291,8 @@ services:
       - bash
       - -c
       - airflow
+    networks:
+      - mexico_net
 
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.
@@ -295,7 +315,12 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - mexico_net
 
 volumes:
   postgres-db-volume:
 
+networks:
+  mexico_net:
+    external: true
