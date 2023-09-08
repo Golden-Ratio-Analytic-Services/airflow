@@ -1,11 +1,11 @@
 import datetime
 import logging
 
-import neo4j
 import osmnx as ox
 from airflow.decorators import dag, task
 from airflow.sensors.filesystem import FileSensor
 
+from utils import get_neo4j_connection
 
 @dag(
     dag_id="process-roadways-dag",
@@ -95,22 +95,6 @@ def process_roadways_dag():
         } IN TRANSACTIONS OF 1000 ROWS;
         """
         db_session.run(load_intersection_relation_query)
-
-    def get_neo4j_connection() -> neo4j.Session:
-        """
-        Gets a session to neo4j
-        """
-        driver = neo4j.GraphDatabase.driver(
-            "bolt://neo4j:7687", auth=("neo4j", "neo4j222")
-        )
-        try:
-            driver.verify_connectivity()
-            session = driver.session(database="neo4j")
-            return session
-        except Exception as connection_error:
-            logging.error("Failed to establish session to neo4j", connection_error)
-            driver.close()
-            session.close()
 
     download_map_data()
     node_file_exists = FileSensor(
