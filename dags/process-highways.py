@@ -16,7 +16,8 @@ def process_roadways_dag():
     @task
     def download_map_data() -> None:
         """
-        Download the geometry & address data
+        Download the highway geometry
+
         :return: None
         """
         logging.info("Downloading Mexico road networks...")

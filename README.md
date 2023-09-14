@@ -18,9 +18,9 @@ Then, [add a new connection in the ui](https://airflow.apache.org/docs/apache-ai
 
 This dag is responsible for downloading highway geometries, saving them to disk in a database ready format, and loading them into the database.
 
-### process-city-points
+### process-addresses
 
-This dag is responsible for downloading the point geometries of cities, saving them to disk, and uploading them to the database
+This dag downloads the address data and then inserts it into neo4j.
 
 ## Developing
 
