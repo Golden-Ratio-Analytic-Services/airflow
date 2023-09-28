@@ -10,6 +10,8 @@ docker-compose up
 
 Then, [add a new connection in the ui](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html#creating-a-connection-with-the-ui) with the following parameters. **This must be done for the dags to run**.
 
+The name is `fs_default` and of type File(path).
+
 ![](images/connection.png)
 
 ## DAGS
