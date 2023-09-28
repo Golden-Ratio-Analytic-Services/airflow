@@ -5,6 +5,7 @@ import requests
 import shutil
 
 from airflow.decorators import dag, task
+from airflow.sensors.filesystem import FileSensor
 
 from utils import get_neo4j_connection
 
@@ -65,7 +66,8 @@ def process_addresses_dag() -> None:
     def load_addresses() -> None:
         """
         Loads addresses from OpenAddresses and attaches them to the
-        nearest intersection
+        nearest intersection.
+        The data format is [longitude, latitude]
 
         :return: None
         """
@@ -73,14 +75,11 @@ def process_addresses_dag() -> None:
 
         db_session = get_neo4j_connection()
         load_address_query = '''
-        CALL apoc.periodic.iterate(
-            'CALL apoc.load.json("file:///source.geojson") YIELD value',
-            'CREATE (a:Address {id: value.properties.id})
-            SET a.location = 
-                point({latitude: value.geometry.coordinates[1], longitude: value.geometry.coordinates[0]}),
-                a.full_address = value.properties.number + " " + value.properties.street + " " + value.properties.city + ", MX " + value.properties.postcode
-            SET a += value.properties',
-  {batchSize:10000, parallel:true})
+        CALL apoc.load.json("file://addresses.geojson") YIELD value
+        MERGE (a:Address {id: value.properties.hash})
+        SET a.location = 
+        point({latitude: value.geometry.coordinates[1], longitude: value.geometry.coordinates[0]}),
+            a.full_address = value.properties.number + " " + value.properties.street + " " + value.properties.city + ", MX " + value.properties.postcode
         '''
         db_session.run(load_address_query)
 
@@ -113,7 +112,15 @@ def process_addresses_dag() -> None:
         db_session.run(load_address_relations)
 
     download_path = '../data/addresses.geojson.gz'
-    download_address_data(download_path) >> decompress_addresses(download_path, "../data/addresses.geojson") >> create_indices() >> load_addresses() >> load_address_intersection_relations()
+    download_address_data(download_path) >> decompress_addresses(download_path, "../data/addresses.geojson")
+    address_file_exists = FileSensor(
+        task_id="wait_for_address_file",
+        filepath="/opt/airflow/data/addresses.geojson",
+        mode="poke",
+        timeout=60 * 60 * 5,  # Timeout after 5 hours
+        poke_interval=60,  # Check for the data every minute
+    )
+    address_file_exists >> create_indices() >> load_addresses() >> load_address_intersection_relations()
 
 
 process_addresses_dag()
