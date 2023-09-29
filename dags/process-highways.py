@@ -13,10 +13,12 @@ from utils import get_neo4j_connection
     schedule="@monthly",
 )
 def process_roadways_dag():
+    
     @task
     def download_map_data() -> None:
         """
-        Download the geometry & address data
+        Download the highway geometry
+
         :return: None
         """
         logging.info("Downloading Mexico road networks...")
@@ -53,7 +55,8 @@ def process_roadways_dag():
     @task
     def load_intersections() -> None:
         """
-        Loads all intersections from an OpenStreetMaps data file
+        Loads all intersections from an OpenStreetMaps data file.
+        The data is in the format [latitude, longitude]
 
         :param db_session: Session for a neo4j connection
         :return:
