@@ -26,11 +26,13 @@ This dag downloads the address data and then inserts it into neo4j.
 
 ## Developing
 
-Install development dependencies with
+Poetry is used to manage the dependencies and environment. To use, run
 
-```python
-python3 -m install -r requirements.txt
 ```
+poetry shell
+```
+
+To exit, run `exit`.
 
 ### Linting
 
